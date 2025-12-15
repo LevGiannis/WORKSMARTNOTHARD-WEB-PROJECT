@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import Inter variable font for improved typography */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-
 /* small app container styles */
 body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial; font-size:16px; line-height:1.5; }
 .muted{@apply text-gray-500}
