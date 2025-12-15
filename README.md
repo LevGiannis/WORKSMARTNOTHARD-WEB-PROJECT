@@ -1,18 +1,23 @@
-# WorkSmart Web Prototype
+# WorkSmart Web
 
-## Overview
-- **English:** A modern React + TypeScript (Vite) single-page application that mirrors the key flows of the WorkSmartNotHard Android app. It focuses on quick goal tracking, production entry, team statistics, and pending actions with a consistent UI.
-- **Ελληνικά:** Μια σύγχρονη εφαρμογή React + TypeScript (Vite) που αναπαράγει τις βασικές ροές της WorkSmartNotHard Android εφαρμογής. Δίνει έμφαση στην ταχεία καταγραφή στόχων, καταχωρήσεων, στατιστικών και εκκρεμοτήτων με κοινή, σταθερή αισθητική.
+## Επισκόπηση
+- Single Page Application σε React + TypeScript (Vite) που αναπαράγει τις βασικές ροές της WorkSmartNotHard εφαρμογής.
+- Ενιαίος οπτικός σχεδιασμός με κοινά headers, διαφάνεια (glass UI) και υποστήριξη dark theme.
+- Τοπική αποθήκευση δεδομένων (χωρίς backend), ιδανικό για γρήγορη καταγραφή στόχων, καταχωρήσεων και εκκρεμοτήτων.
 
-## Key Features
-- **English:** Unified layout with reusable `PageHeader`, responsive hero dashboard, quick actions, and domain-specific entry logic (e.g., automatic appointment totals, Vodafone Home subtypes).
-- **Ελληνικά:** Ενοποιημένη διάταξη με κοινό `PageHeader`, προσαρμοστικό hero dashboard, γρήγορα κουμπιά δράσης και λογική ειδικών καταχωρήσεων (π.χ. αυτόματος υπολογισμός ραντεβού, υποτύποι Vodafone Home).
+## Βασικά Χαρακτηριστικά
+- Κοινό `PageHeader` για ομοιογενείς τίτλους/breadcrumb σε όλες τις σελίδες.
+- Hero section στην αρχική σελίδα με στατιστικά μήνα και γρήγορες ενέργειες.
+- Εξειδικευμένη λογική φόρμας στην `AddEntryPage` (υποτύποι Vodafone Home, πολλαπλές επιλογές ποσών ραντεβού με αυτόματη άθροιση, προεπιλογή "Team Ready").
+- Πλήρεις σελίδες για στόχους, στατιστικά, ιστορικό, εκκρεμότητες, προφίλ.
+- Service worker scaffold (`public/sw.js`) για μελλοντικές ειδοποιήσεις.
 
-## Requirements
-- **English:** Node.js 18+, npm 9+, modern browser with localStorage support.
-- **Ελληνικά:** Node.js 18+, npm 9+, σύγχρονος περιηγητής με υποστήριξη localStorage.
+## Τεχνολογίες & Προαπαιτούμενα
+- Node.js 18 ή νεότερο, npm 9 ή νεότερο.
+- Σύγχρονος browser με ενεργοποιημένο `localStorage`.
+- Προαιρετικά: Tailwind/PostCSS toolchain εάν θέλεις να επεκτείνεις τα utilities.
 
-## Quick Start / Γρήγορη Εκκίνηση
+## Γρήγορη Εκκίνηση
 ```bash
 git clone <repository>
 cd worksmart-web
@@ -20,51 +25,47 @@ npm install
 npm run dev
 ```
 
-- **English:** Open the dev server URL (default: http://localhost:5173) to explore the SPA.
-- **Ελληνικά:** Άνοιξε το URL του dev server (προεπιλογή: http://localhost:5173) για να δεις την εφαρμογή.
+Άνοιξε τον dev server (προεπιλογή: http://localhost:5173) για να χρησιμοποιήσεις την εφαρμογή.
 
-## Available Scripts / Διαθέσιμες Εντολές
-- `npm run dev` — **English:** start Vite in development mode · **Ελληνικά:** εκκίνηση Vite σε development.
-- `npm run build` — **English:** create a production bundle · **Ελληνικά:** δημιουργεί production build.
-- `npm run preview` — **English:** serve the production bundle locally · **Ελληνικά:** τοπική προεπισκόπηση build.
+## Διαθέσιμες Εντολές npm
+- `npm run dev` — Εκκίνηση σε development mode με hot reload.
+- `npm run build` — Δημιουργία παραγωγικού bundle (Vite).
+- `npm run preview` — Τοπική προεπισκόπηση του production build.
 
-## Project Structure / Δομή Έργου
-- `src/main.tsx` — **English:** app bootstrap and router setup · **Ελληνικά:** αρχικοποίηση εφαρμογής & router.
-- `src/pages/*` — **English:** route-driven screens (home, stats, entries, goals, profile, pendings) · **Ελληνικά:** οθόνες ανά σελίδα (αρχική, στατιστικά, καταχωρήσεις, στόχοι, προφίλ, εκκρεμότητες).
-- `src/components/*` — **English:** reusable UI blocks (PageHeader, tables, modals) · **Ελληνικά:** επαναχρησιμοποιήσιμα στοιχεία UI.
-- `src/services/storage.ts` — **English:** persistence layer using `localStorage` · **Ελληνικά:** αποθήκευση δεδομένων με χρήση `localStorage`.
-- `public/sw.js` — **English:** service worker scaffold for notifications · **Ελληνικά:** service worker για ειδοποιήσεις.
+## Δομή Έργου
+- `src/main.tsx` — Εκκίνηση εφαρμογής, `router` και providers.
+- `src/App.tsx` — Ορισμός route layout.
+- `src/pages/` — Σελίδες (Αρχική, Στατιστικά, Καταχώρηση, Στόχοι, Εκκρεμότητες, Προφίλ κ.λπ.).
+- `src/components/` — Επαναχρησιμοποιήσιμα στοιχεία UI (PageHeader, πίνακες, modals).
+- `src/hooks/useProgress.ts` — Υπολογισμός προόδου/στόχων για τον τρέχοντα μήνα.
+- `src/services/storage.ts` — Διαχείριση δεδομένων μέσω `localStorage` (entries, goals, tasks, pendings).
+- `public/sw.js` — Σκελετός service worker για notifications.
 
-## Data & Persistence / Δεδομένα & Αποθήκευση
-- **English:** All entities (entries, goals, pending items) are stored in the browser via `localStorage`. No backend is required; data is scoped per device/profile.
-- **Ελληνικά:** Όλες οι εγγραφές, στόχοι και εκκρεμότητες αποθηκεύονται στον περιηγητή μέσω `localStorage`. Δεν απαιτείται backend· τα δεδομένα είναι τοπικά ανά συσκευή.
+## Δεδομένα & Αποθήκευση
+- Όλα τα στοιχεία φυλάσσονται τοπικά στον browser (`localStorage`).
+- Οι λίστες (entries, goals, tasks, pendings) είναι προσβάσιμες άμεσα χωρίς backend.
+- Τα στατιστικά υπολογίζονται runtime βάσει των εγγραφών κάθε μήνα.
 
 ## Styling
-- **English:** Custom CSS with Tailwind-inspired utility classes (processed by PostCSS). The `index.css` file contains explicit fallbacks so the UI renders even without Tailwind compilation.
-- **Ελληνικά:** Προσαρμοσμένο CSS με utilities τύπου Tailwind (μέσω PostCSS). Το `index.css` έχει ρητές fallback κλάσεις ώστε το UI να εμφανίζεται ακόμη και χωρίς build Tailwind.
+- Κύριο stylesheet: `src/index.css` με custom κλάσεις εμπνευσμένες από Tailwind.
+- Ενσωματωμένα fallbacks για να αποδίδεται σωστά το UI ακόμη και χωρίς build της Tailwind.
+- Κοινό card/tile σύστημα (glassmorphism) και προσαρμοζόμενη διάταξη πλακιδίων στην αρχική.
 
-## Development Notes / Σημειώσεις Ανάπτυξης
-- **English:**
-	- Home page hero and quick tiles adapt responsively.
-	- `AddEntryPage` enforces business rules for Vodafone Home subtypes and appointment amounts.
-	- Notifications can be enabled via the provided service worker.
-- **Ελληνικά:**
-	- Η αρχική σελίδα και τα πλακίδια προσαρμόζονται σε όλες τις διαστάσεις.
-	- Η σελίδα καταχώρησης εφαρμόζει κανόνες για Vodafone Home και ραντεβού.
-	- Οι ειδοποιήσεις μπορούν να ενεργοποιηθούν μέσω του service worker.
+## Σημειώσεις Ανάπτυξης
+- Η αρχική σελίδα κάνει lazy επιλογή hero εικόνας ανάμεσα σε διαθέσιμα assets (public/hero*.{jpg,svg}).
+- Οι φόρμες έχουν βελτιωμένα validations και εμφανίζουν inline μηνύματα σφαλμάτων.
+- Τα ραντεβού υποστηρίζουν πολλαπλές επιλογές ποσών με καταμέτρηση ανά ποσό και αυτόματο άθροισμα μονάδων.
+- Το πεδίο αριθμού παραγγελίας για ραντεβού προεπιλέγει "Team Ready" αλλά μπορεί να τροποποιηθεί.
 
-## Next Steps / Επόμενα Βήματα
-- **English:**
-	- Integrate real bonus calculation logic from the Android codebase.
-	- Add automated tests (unit + e2e) and CI/CD workflow.
-	- Consider syncing data to a backend for multi-device access.
-- **Ελληνικά:**
-	- Ενσωμάτωση της πραγματικής φόρμουλας bonus από το Android project.
-	- Προσθήκη αυτοματοποιημένων tests (unit + e2e) και ροής CI/CD.
-	- Επέκταση με backend συγχρονισμό για πρόσβαση από πολλές συσκευές.
+## Επόμενα Βήματα
+- Ενσωμάτωση της πραγματικής φόρμουλας bonus από τον Android κώδικα.
+- Προσθήκη αυτοματοποιημένων tests (unit και end-to-end) και pipeline CI/CD.
+- Προαιρετικός συγχρονισμός σε backend για multi-device εμπειρία.
+- Βελτίωση service worker ώστε να αποστέλλει προγραμματισμένες ειδοποιήσεις.
 
----
+## Συνεισφορά
+- Τα Pull Requests και τα issues είναι ευπρόσδεκτα.
+- Χρησιμοποίησε την κύρια branch `main` ή δημιούργησε feature branches για τις αλλαγές.
+- Προτείνεται `npm run build` πριν το commit για έλεγχο ότι όλα λειτουργούν.
 
-**English:** Contributions and issue reports are welcome—open a Pull Request or GitHub issue.
-
-**Ελληνικά:** Οποιαδήποτε συμβολή ή αναφορά προβλήματος είναι ευπρόσδεκτη—άνοιξε Pull Request ή issue στο GitHub.
+Καλή χρήση του WorkSmart Web! 🎯
