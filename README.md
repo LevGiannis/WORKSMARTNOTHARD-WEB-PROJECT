@@ -44,7 +44,7 @@ npm run dev
 ### GitHub Pages (με GitHub Actions)
 
 - Υπάρχει workflow στο `/.github/workflows/deploy-pages.yml` που κάνει build και deploy.
-- Το site θα σερβίρεται στο `https://<username>.github.io/WORKSMARTNOTHARD-WEB-PROJECT/`.
+- Το site θα σερβίρεται στο `https://<username>.github.io/worksmartnothard-web-project/`.
 
 Βήματα:
 

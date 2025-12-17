@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 
-const PAGES_BASE = '/WORKSMARTNOTHARD-WEB-PROJECT/'
+const PAGES_BASE = '/worksmartnothard-web-project/'
 
 export default defineConfig(({ command, mode }) => {
   // Use repo sub-path only for production build (GitHub Pages).
