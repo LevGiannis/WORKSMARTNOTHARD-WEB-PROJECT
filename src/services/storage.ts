@@ -6,6 +6,31 @@ const GOALS_KEY = 'ws_goals'
 const TASKS_KEY = 'ws_tasks'
 const PENDINGS_KEY = 'ws_pendings'
 
+type StorageBackend = {
+  getItem: (key: string) => string | null | Promise<string | null>
+  setItem: (key: string, value: string) => void | Promise<void>
+  removeItem?: (key: string) => void | Promise<void>
+  clear?: () => void | Promise<void>
+}
+
+function getStorageBackend(): StorageBackend {
+  if (typeof window !== 'undefined' && window.wsDeviceStorage) {
+    return {
+      getItem: (k) => window.wsDeviceStorage!.getItem(k),
+      setItem: (k, v) => window.wsDeviceStorage!.setItem(k, v).then(() => undefined),
+      removeItem: (k) => window.wsDeviceStorage!.removeItem(k).then(() => undefined),
+      clear: () => window.wsDeviceStorage!.clear().then(() => undefined),
+    }
+  }
+
+  return {
+    getItem: (k) => localStorage.getItem(k),
+    setItem: (k, v) => localStorage.setItem(k, v),
+    removeItem: (k) => localStorage.removeItem(k),
+    clear: () => localStorage.clear(),
+  }
+}
+
 export interface DailyEntry { id: string, points:number, date:string, category?:string, homeType?:string, orderNumber?:string, customerName?:string, afm?:string, mobilePhone?:string, landlinePhone?:string }
 export interface Goal { id: string, category?:string, title?:string, target:number, year?:number, month?:number, notes?:string, color?:string }
 export interface Task { id: string, title:string, done:boolean }
@@ -23,20 +48,23 @@ export interface PendingItem {
   createdAt?: string
 }
 
-function read<T>(key:string): T[] {
-  const raw = localStorage.getItem(key)
+async function read<T>(key:string): Promise<T[]> {
+  const storage = getStorageBackend()
+  const raw = await storage.getItem(key)
   if(!raw) return []
   try { return JSON.parse(raw) as T[] } catch { return [] }
 }
-function write<T>(key:string, arr:T[]){
-  localStorage.setItem(key, JSON.stringify(arr))
+
+async function write<T>(key:string, arr:T[]){
+  const storage = getStorageBackend()
+  await storage.setItem(key, JSON.stringify(arr))
 }
 
 export async function loadAllEntries(): Promise<DailyEntry[]>{
   return read<DailyEntry>(ENTRIES_KEY)
 }
 export async function saveEntry(payload:Partial<DailyEntry>){
-  const entries = read<DailyEntry>(ENTRIES_KEY)
+  const entries = await read<DailyEntry>(ENTRIES_KEY)
   const entry:DailyEntry = {
     id: uuidv4(),
     points: payload.points||0,
@@ -50,7 +78,7 @@ export async function saveEntry(payload:Partial<DailyEntry>){
     landlinePhone: (payload as any).landlinePhone || ''
   }
   entries.push(entry)
-  write(ENTRIES_KEY, entries)
+  await write(ENTRIES_KEY, entries)
   // notify the app that entries changed so UI can refresh (same-tab)
   try{
     if (typeof window !== 'undefined' && typeof (window as any).dispatchEvent === 'function'){
@@ -67,7 +95,7 @@ export async function loadAllGoals(): Promise<Goal[]>{
   return read<Goal>(GOALS_KEY)
 }
 export async function saveGoal(payload:Partial<Goal>){
-  const goals = read<Goal>(GOALS_KEY)
+  const goals = await read<Goal>(GOALS_KEY)
   const now = new Date()
   const g:Goal = {
     id: uuidv4(),
@@ -80,28 +108,28 @@ export async function saveGoal(payload:Partial<Goal>){
     color: payload.color || '#7c3aed'
   }
   goals.push(g)
-  write(GOALS_KEY, goals)
+  await write(GOALS_KEY, goals)
 }
 
 export async function loadAllTasks(): Promise<Task[]>{
   return read<Task>(TASKS_KEY)
 }
 export async function saveTask(payload:Partial<Task>){
-  const tasks = read<Task>(TASKS_KEY)
+  const tasks = await read<Task>(TASKS_KEY)
   const t:Task = { id: uuidv4(), title: payload.title||'Task', done: !!payload.done }
   tasks.push(t)
-  write(TASKS_KEY, tasks)
+  await write(TASKS_KEY, tasks)
 }
 export async function toggleTaskDone(id:string){
-  const tasks = read<Task>(TASKS_KEY)
+  const tasks = await read<Task>(TASKS_KEY)
   const idx = tasks.findIndex(t=>t.id===id)
-  if(idx!==-1){ tasks[idx].done = !tasks[idx].done; write(TASKS_KEY, tasks) }
+  if(idx!==-1){ tasks[idx].done = !tasks[idx].done; await write(TASKS_KEY, tasks) }
 }
 
 // Pending items (εκκρεμότητες)
 export async function loadPendingItems(): Promise<PendingItem[]>{
   // read raw array and migrate any old-shape items to the new shape
-  const raw = read<any>(PENDINGS_KEY)
+  const raw = await read<any>(PENDINGS_KEY)
   let migrated = false
   const out: PendingItem[] = raw.map((it:any) => {
     // already in new shape?
@@ -136,14 +164,14 @@ export async function loadPendingItems(): Promise<PendingItem[]>{
 
   // if migration happened, persist new shape back to storage
   if(migrated){
-    try{ write<PendingItem>(PENDINGS_KEY, out) }catch(e){ console.warn('pending items migration write failed', e) }
+    try{ await write<PendingItem>(PENDINGS_KEY, out) }catch(e){ console.warn('pending items migration write failed', e) }
   }
 
   return out
 }
 
 export async function savePendingItem(payload:Partial<PendingItem>){
-  const arr = read<PendingItem>(PENDINGS_KEY)
+  const arr = await read<PendingItem>(PENDINGS_KEY)
   const p:PendingItem = {
     id: uuidv4(),
     customerName: payload.customerName || '',
@@ -157,30 +185,33 @@ export async function savePendingItem(payload:Partial<PendingItem>){
     createdAt: payload.createdAt || new Date().toISOString()
   }
   arr.push(p)
-  write(PENDINGS_KEY, arr)
+  await write(PENDINGS_KEY, arr)
   return p
 }
 
 export async function updatePendingItem(id:string, payload:Partial<PendingItem>){
-  const arr = read<PendingItem>(PENDINGS_KEY)
+  const arr = await read<PendingItem>(PENDINGS_KEY)
   const idx = arr.findIndex(a=>a.id===id)
   if(idx === -1) return null
   arr[idx] = { ...arr[idx], ...payload }
-  write(PENDINGS_KEY, arr)
+  await write(PENDINGS_KEY, arr)
   return arr[idx]
 }
 
 export async function deletePendingItem(id:string){
-  const arr = read<PendingItem>(PENDINGS_KEY)
+  const arr = await read<PendingItem>(PENDINGS_KEY)
   const idx = arr.findIndex(a=>a.id===id)
   if(idx===-1) return false
   arr.splice(idx,1)
-  write(PENDINGS_KEY, arr)
+  await write(PENDINGS_KEY, arr)
   return true
 }
 
 export function getProgressSummary(){
-  const entries = read<DailyEntry>(ENTRIES_KEY)
+  // Sync helper for callers; relies on localStorage only.
+  // In Electron, prefer using async loaders instead.
+  const raw = typeof window !== 'undefined' && !window.wsDeviceStorage ? localStorage.getItem(ENTRIES_KEY) : null
+  const entries = raw ? (JSON.parse(raw) as DailyEntry[]) : []
   const total = entries.reduce((s,e)=> s + (e.points||0), 0)
   const achieved = entries.filter(e=> (e.points||0) > 0).length
   return { total, achieved }
@@ -189,12 +220,12 @@ export function getProgressSummary(){
 export async function loadEntriesForMonth(year:number, month:number): Promise<DailyEntry[]>{
   const m = month < 10 ? `0${month}` : `${month}`
   const prefix = `${year}-${m}`
-  const all = read<DailyEntry>(ENTRIES_KEY)
+  const all = await read<DailyEntry>(ENTRIES_KEY)
   return all.filter(e => typeof e.date === 'string' && e.date.startsWith(prefix))
 }
 
 export async function loadGoalsForMonth(year:number, month:number): Promise<Goal[]>{
-  const all = read<Goal>(GOALS_KEY)
+  const all = await read<Goal>(GOALS_KEY)
   return all.filter(g => g.year === year && g.month === month)
 }
 
@@ -228,9 +259,11 @@ export async function getProgressForMonth(year:number, month:number): Promise<Ca
 // Utility: clear stored data (entries, goals, tasks)
 export async function clearAllData(){
   try{
-    write(ENTRIES_KEY, [])
-    write(GOALS_KEY, [])
-    write(TASKS_KEY, [])
+    await Promise.all([
+      write(ENTRIES_KEY, []),
+      write(GOALS_KEY, []),
+      write(TASKS_KEY, []),
+    ])
   }catch(e){
     console.error('clearAllData failed', e)
     throw e

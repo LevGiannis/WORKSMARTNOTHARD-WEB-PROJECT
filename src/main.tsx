@@ -1,6 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, HashRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 import { registerNotifications } from './utils/notifications'
@@ -15,9 +15,15 @@ try{
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <App />
-    </BrowserRouter>
+    {typeof window !== 'undefined' && window.wsDeviceStorage ? (
+      <HashRouter>
+        <App />
+      </HashRouter>
+    ) : (
+      <BrowserRouter basename={import.meta.env.BASE_URL && import.meta.env.BASE_URL.startsWith('.') ? '/' : import.meta.env.BASE_URL}>
+        <App />
+      </BrowserRouter>
+    )}
   </React.StrictMode>
 )
 

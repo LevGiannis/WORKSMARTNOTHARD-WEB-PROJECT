@@ -1,9 +1,13 @@
 // Minimal notifications helper: requests permission and registers a basic service worker (if available).
 export async function registerNotifications(){
   if(typeof window === 'undefined') return
+  // Desktop (Electron) should not register a web service worker.
+  if((window as any).wsDeviceStorage || window.location?.protocol === 'file:') return
   if('serviceWorker' in navigator){
     try{
-      await navigator.serviceWorker.register('/sw.js')
+      const baseUrl = (import.meta as any).env?.BASE_URL || '/'
+      const swUrl = `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}sw.js`
+      await navigator.serviceWorker.register(swUrl)
       console.log('Service worker registered')
     }catch(e){
       console.warn('Service worker registration failed', e)

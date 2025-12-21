@@ -37,6 +37,19 @@ npm run dev
 - `npm run build` — Δημιουργία παραγωγικού bundle (Vite).
 - `npm run preview` — Τοπική προεπισκόπηση του production build.
 
+## Desktop App (Offline στη συσκευή)
+
+Η εφαρμογή μπορεί να τρέξει και ως **desktop app** (Electron) και να αποθηκεύει τα δεδομένα σε **αρχείο στη συσκευή** (όχι στον browser).
+
+- `npm run electron:dev` — Dev mode (Vite + Electron).
+- `npm run electron:dist` — Παράγει έτοιμο πακέτο (π.χ. `dist/*.zip`).
+
+### Windows (zip)
+
+- Το CI workflow `/.github/workflows/build-desktop.yml` χτίζει και **Windows zip** σε `windows-latest`.
+- Για τελικό “χωρίς terminal”:
+	- Δημιούργησε GitHub Release (ή κάνε manual run το workflow) και κατέβασε το **WorkSmartNotHard-windows** artifact / Release asset (`dist/*.zip`).
+
 ## Deploy (Remote) χωρίς κοινή αποθήκευση
 
 Μπορείς να το ανεβάσεις ως static site (GitHub Pages). Η εφαρμογή θα τρέχει απομακρυσμένα από URL, αλλά τα δεδομένα θα παραμένουν **τοπικά** στο `localStorage` του browser (άρα κάθε υπολογιστής/προφίλ browser έχει δικά του στοιχεία).
@@ -54,7 +67,8 @@ npm run dev
 
 ### Πού αποθηκεύονται τα στοιχεία;
 
-- Στον browser, στο `localStorage` (δες `src/services/storage.ts`).
+- Web (GitHub Pages): στον browser, στο `localStorage` (δες `src/services/storage.ts`).
+- Desktop (Electron): σε αρχείο JSON στο `userData` της εφαρμογής (δες `electron/main.ts`).
 - Δεν υπάρχει κοινή αποθήκευση/συγχρονισμός μεταξύ συσκευών.
 
 ## Δομή Έργου
