@@ -22,9 +22,177 @@
       })(window.location)
     </script>
 
+    <script>
+      // Portable (file://) debug overlay:
+      // Some locked-down environments make it hard to open DevTools.
+      // This captures startup/runtime errors and allows downloading a log.
+      ;(function () {
+        var isFile = window.location && window.location.protocol === 'file:'
+        var enable = isFile
+        if (!enable) return
+
+        var logs = []
+        function nowIso() {
+          try {
+            return new Date().toISOString()
+          } catch (e) {
+            return ''
+          }
+        }
+        function push(line) {
+          try {
+            logs.push('[' + nowIso() + '] ' + String(line))
+          } catch (e) {}
+        }
+
+        // Expose for app code if needed
+        window.__wsPortableLogs = logs
+
+        var original = {
+          log: console.log,
+          warn: console.warn,
+          error: console.error,
+        }
+        console.log = function () {
+          try { push('console.log: ' + Array.prototype.join.call(arguments, ' ')) } catch (e) {}
+          return original.log.apply(console, arguments)
+        }
+        console.warn = function () {
+          try { push('console.warn: ' + Array.prototype.join.call(arguments, ' ')) } catch (e) {}
+          return original.warn.apply(console, arguments)
+        }
+        console.error = function () {
+          try { push('console.error: ' + Array.prototype.join.call(arguments, ' ')) } catch (e) {}
+          showOverlay()
+          return original.error.apply(console, arguments)
+        }
+
+        function buildOverlay() {
+          var wrap = document.createElement('div')
+          wrap.id = 'ws-portable-debug'
+          wrap.style.cssText =
+            'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483647;' +
+            'font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;' +
+            'background:rgba(10,10,20,0.94);color:#fff;border:1px solid rgba(255,255,255,0.14);' +
+            'border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,0.55);padding:12px;display:none;'
+
+          var top = document.createElement('div')
+          top.style.cssText = 'display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;'
+
+          var title = document.createElement('div')
+          title.textContent = 'WorkSmartNotHard — Portable Debug'
+          title.style.cssText = 'font-weight:800;letter-spacing:0.2px;'
+
+          var actions = document.createElement('div')
+          actions.style.cssText = 'display:flex;gap:8px;align-items:center;'
+
+          function mkBtn(label) {
+            var b = document.createElement('button')
+            b.type = 'button'
+            b.textContent = label
+            b.style.cssText =
+              'cursor:pointer;border-radius:10px;padding:8px 10px;border:1px solid rgba(255,255,255,0.16);' +
+              'background:rgba(255,255,255,0.06);color:#fff;font-weight:700;'
+            return b
+          }
+
+          var btnDownload = mkBtn('Download log')
+          btnDownload.onclick = function () {
+            try {
+              var blob = new Blob([logs.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
+              var url = URL.createObjectURL(blob)
+              var a = document.createElement('a')
+              a.href = url
+              a.download = 'worksmart-portable-log.txt'
+              document.body.appendChild(a)
+              a.click()
+              a.remove()
+              setTimeout(function () { URL.revokeObjectURL(url) }, 1500)
+            } catch (e) {}
+          }
+
+          var btnCopy = mkBtn('Copy')
+          btnCopy.onclick = function () {
+            try {
+              var text = logs.join('\n')
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+              }
+            } catch (e) {}
+          }
+
+          var btnHide = mkBtn('Hide')
+          btnHide.onclick = function () {
+            wrap.style.display = 'none'
+          }
+
+          actions.appendChild(btnDownload)
+          actions.appendChild(btnCopy)
+          actions.appendChild(btnHide)
+          top.appendChild(title)
+          top.appendChild(actions)
+
+          var hint = document.createElement('div')
+          hint.textContent = 'Αν βλέπεις κενή σελίδα, πάτα “Download log” και στείλε το αρχείο.'
+          hint.style.cssText = 'margin-top:6px;font-size:12px;opacity:0.86;'
+
+          var pre = document.createElement('pre')
+          pre.id = 'ws-portable-debug-pre'
+          pre.style.cssText =
+            'margin-top:10px;max-height:220px;overflow:auto;white-space:pre-wrap;' +
+            'background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.10);'
+
+          wrap.appendChild(top)
+          wrap.appendChild(hint)
+          wrap.appendChild(pre)
+          document.addEventListener('DOMContentLoaded', function () {
+            try {
+              document.body.appendChild(wrap)
+            } catch (e) {}
+          })
+          return wrap
+        }
+
+        var overlay
+        function showOverlay() {
+          try {
+            if (!overlay) overlay = buildOverlay()
+            var pre = document.getElementById('ws-portable-debug-pre')
+            if (pre) pre.textContent = logs.slice(-200).join('\n')
+            if (overlay) overlay.style.display = 'block'
+          } catch (e) {}
+        }
+
+        window.addEventListener(
+          'error',
+          function (ev) {
+            try {
+              var msg = (ev && ev.message) || 'Unknown error'
+              var src = (ev && ev.filename) || ''
+              var line = (ev && ev.lineno) || 0
+              var col = (ev && ev.colno) || 0
+              push('window.error: ' + msg + ' @ ' + src + ':' + line + ':' + col)
+              if (ev && ev.error && ev.error.stack) push(ev.error.stack)
+            } catch (e) {}
+            showOverlay()
+          },
+          true
+        )
+
+        window.addEventListener('unhandledrejection', function (ev) {
+          try {
+            push('unhandledrejection: ' + (ev && ev.reason ? ev.reason : 'unknown'))
+          } catch (e) {}
+          showOverlay()
+        })
+
+        push('portable debug enabled')
+      })()
+    </script>
+
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

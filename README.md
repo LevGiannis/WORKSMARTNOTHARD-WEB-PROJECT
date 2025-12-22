@@ -41,6 +41,13 @@ npm run build:portable
 
 Μετά άνοιξε με διπλό κλικ το `portable/index.html`.
 
+### Portable troubleshooting (αν ανοίγει “κενό”)
+
+Στο `file://` δεν υπάρχει log αρχείο στον δίσκο (ο browser δεν μπορεί να γράψει αρχεία).
+
+- Αν δεις κενή σελίδα, θα εμφανιστεί ένα **Portable Debug** panel.
+- Πάτα **Download log** και στείλε το `worksmart-portable-log.txt`.
+
 ### Portable “χωρίς terminal” download (zip)
 
 GitHub → **Actions** → **Build Portable (Double-Click Index)** → κατέβασε artifact `WorkSmartNotHard-portable`.
