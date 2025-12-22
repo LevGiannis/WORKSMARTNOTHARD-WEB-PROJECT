@@ -1,0 +1,38 @@
+name: Build Portable (Double-Click Index)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - portable-doubleclick-index
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build portable
+        run: npm run build:portable
+
+      - name: Create zip
+        run: |
+          cd portable
+          zip -r ../WorkSmartNotHard-portable.zip .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WorkSmartNotHard-portable
+          path: WorkSmartNotHard-portable.zip
+          if-no-files-found: error

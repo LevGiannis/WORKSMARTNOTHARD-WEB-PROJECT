@@ -41,6 +41,10 @@ npm run build:portable
 
 Μετά άνοιξε με διπλό κλικ το `portable/index.html`.
 
+### Portable “χωρίς terminal” download (zip)
+
+GitHub → **Actions** → **Build Portable (Double-Click Index)** → κατέβασε artifact `WorkSmartNotHard-portable`.
+
 ## Desktop App (Electron) — Offline στη συσκευή
 
 ### Dev
