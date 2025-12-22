@@ -15,15 +15,25 @@ try{
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {typeof window !== 'undefined' && window.wsDeviceStorage ? (
-      <HashRouter>
-        <App />
-      </HashRouter>
-    ) : (
-      <BrowserRouter basename={import.meta.env.BASE_URL && import.meta.env.BASE_URL.startsWith('.') ? '/' : import.meta.env.BASE_URL}>
-        <App />
-      </BrowserRouter>
-    )}
+    {(() => {
+      const isElectron = typeof window !== 'undefined' && !!window.wsDeviceStorage
+      const isFile = typeof window !== 'undefined' && window.location?.protocol === 'file:'
+      if (isElectron || isFile) {
+        return (
+          <HashRouter>
+            <App />
+          </HashRouter>
+        )
+      }
+
+      const baseUrl = import.meta.env.BASE_URL
+      const basename = baseUrl && baseUrl.startsWith('.') ? '/' : baseUrl
+      return (
+        <BrowserRouter basename={basename}>
+          <App />
+        </BrowserRouter>
+      )
+    })()}
   </React.StrictMode>
 )
 

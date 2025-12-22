@@ -30,6 +30,17 @@ npm run build
 npm run preview
 ```
 
+## Portable Offline (διπλό κλικ σε `index.html`)
+
+Φτιάχνει ένα self‑contained folder που ανοίγει με **διπλό κλικ** (χωρίς server/Electron):
+
+```bash
+npm ci
+npm run build:portable
+```
+
+Μετά άνοιξε με διπλό κλικ το `portable/index.html`.
+
 ## Desktop App (Electron) — Offline στη συσκευή
 
 ### Dev

@@ -8,8 +8,9 @@ export default defineConfig(({ command, mode }) => {
   const isBuild = command === 'build'
   const isPages = mode === 'production' || process.env.GITHUB_ACTIONS === 'true'
   const isElectron = process.env.ELECTRON === 'true'
+  const isPortable = mode === 'portable' || process.env.PORTABLE === 'true'
 
   return {
-    base: isBuild && isElectron ? './' : isBuild && isPages ? PAGES_BASE : '/',
+    base: isBuild && (isElectron || isPortable) ? './' : isBuild && isPages ? PAGES_BASE : '/',
   }
 })
