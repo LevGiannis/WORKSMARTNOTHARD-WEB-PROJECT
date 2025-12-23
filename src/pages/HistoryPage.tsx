@@ -162,6 +162,7 @@ export default function HistoryPage(){
         isOpen={!!editing}
         title={editing ? `Επεξεργασία: ${editing.category || 'Entry'}` : 'Επεξεργασία'}
         onClose={closeEdit}
+        size="md"
       >
         <div className="grid gap-3">
           {errors.length > 0 && (

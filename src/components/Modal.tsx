@@ -6,11 +6,14 @@ type ModalProps = {
   title?: string
   onClose: () => void
   children: React.ReactNode
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export default function Modal({ isOpen, title, onClose, children }: ModalProps){
+export default function Modal({ isOpen, title, onClose, children, size = 'lg' }: ModalProps){
   const overlayRef = useRef<HTMLDivElement | null>(null)
   const panelRef = useRef<HTMLDivElement | null>(null)
+
+  const sizeClass = size === 'sm' ? 'max-w-md' : size === 'md' ? 'max-w-xl' : 'max-w-3xl'
 
   // Close on ESC
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function Modal({ isOpen, title, onClose, children }: ModalProps){
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="bg-gradient-to-br from-purple-700/80 to-pink-600/60 backdrop-blur-md text-white rounded-2xl shadow-2xl max-w-3xl w-full mx-4 p-6 outline-none"
+        className={`bg-gradient-to-br from-purple-700/80 to-pink-600/60 backdrop-blur-md text-white rounded-2xl shadow-2xl ${sizeClass} w-full mx-4 p-6 outline-none`}
         onMouseDown={e => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 mb-4">

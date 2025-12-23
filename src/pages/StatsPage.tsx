@@ -540,6 +540,7 @@ export default function StatsPage(){
         isOpen={!!editing}
         title={editing ? `Επεξεργασία: ${editing.category || 'Entry'}` : 'Επεξεργασία'}
         onClose={closeEdit}
+        size="md"
       >
         <div className="grid gap-3">
           {editErrors.length > 0 && (
