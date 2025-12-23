@@ -207,6 +207,29 @@ export async function clearAllData(){
 export async function loadAllEntries(): Promise<DailyEntry[]>{
   return read<DailyEntry>(ENTRIES_KEY)
 }
+
+export async function updateEntry(id: string, patch: Partial<DailyEntry>): Promise<DailyEntry | null> {
+  const entries = await read<DailyEntry>(ENTRIES_KEY)
+  const idx = entries.findIndex(e => e.id === id)
+  if (idx === -1) return null
+
+  const updated: DailyEntry = {
+    ...entries[idx],
+    ...patch,
+    id
+  }
+  entries[idx] = updated
+  await write(ENTRIES_KEY, entries)
+
+  try{
+    if (typeof window !== 'undefined' && typeof (window as any).dispatchEvent === 'function'){
+      const ev = new CustomEvent('ws:entries-updated', { detail: { action: 'update', entry: updated } })
+      window.dispatchEvent(ev)
+    }
+  }catch(e){ /* ignore */ }
+
+  return updated
+}
 export async function saveEntry(payload:Partial<DailyEntry>){
   const entries = await read<DailyEntry>(ENTRIES_KEY)
   const entry:DailyEntry = {
