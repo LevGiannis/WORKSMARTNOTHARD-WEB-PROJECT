@@ -1,9 +1,10 @@
 // Utility for exporting eco-friendly Excel (XLSX) files
 
 
-// Dynamic import for Vite/browser compatibility
-// Returns a Promise
-export async function exportEcoFriendlyExcel({
+// Static import for portable build compatibility
+import * as XLSX from 'xlsx';
+
+export function exportEcoFriendlyExcel({
   data,
   filename = 'report.xlsx',
   sheetName = 'Αναφορά',
@@ -16,7 +17,6 @@ export async function exportEcoFriendlyExcel({
   headers?: string[],
   greenHeader?: boolean
 }) {
-  const XLSX = await import('xlsx')
   // Prepare worksheet data
   const wsData = [headers.length ? headers : Object.keys(data[0]||{})]
   for(const row of data) {
