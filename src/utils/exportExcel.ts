@@ -24,16 +24,60 @@ export function exportEcoFriendlyExcel({
   }
   const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-  // Eco-friendly: green header row
-  if(greenHeader && ws['!ref']) {
+  // Formatting: auto column width, borders, alignment, bold header, green header, greek formats
+  if(ws['!ref']) {
     const range = XLSX.utils.decode_range(ws['!ref'])
+    // Υπολογισμός αυτόματου πλάτους στηλών
+    const colWidths = []
     for(let C = range.s.c; C <= range.e.c; ++C) {
-      const cell = ws[XLSX.utils.encode_cell({r:0, c:C})]
-      if(cell) {
-        cell.s = {
-          fill: { fgColor: { rgb: 'C6EFCE' } }, // light green
-          font: { bold: true, color: { rgb: '006100' } }, // dark green text
-          alignment: { horizontal: 'center' }
+      let maxLen = 10
+      for(let R = range.s.r; R <= range.e.r; ++R) {
+        const cell = ws[XLSX.utils.encode_cell({r:R, c:C})]
+        let v = cell && cell.v ? String(cell.v) : ''
+        if(v.length > maxLen) maxLen = v.length
+      }
+      colWidths.push({ wch: maxLen + 2 })
+    }
+    ws['!cols'] = colWidths
+
+    // Εφαρμογή μορφοποίησης σε όλα τα κελιά
+    for(let R = range.s.r; R <= range.e.r; ++R) {
+      for(let C = range.s.c; C <= range.e.c; ++C) {
+        const cell = ws[XLSX.utils.encode_cell({r:R, c:C})]
+        if(cell) {
+          // Header row
+          if(R === 0) {
+            cell.s = {
+              fill: greenHeader ? { fgColor: { rgb: 'C6EFCE' } } : undefined,
+              font: { bold: true, color: { rgb: greenHeader ? '006100' : '000000' } },
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: {
+                top: { style: 'thin', color: { rgb: 'A0A0A0' } },
+                left: { style: 'thin', color: { rgb: 'A0A0A0' } },
+                right: { style: 'thin', color: { rgb: 'A0A0A0' } },
+                bottom: { style: 'thin', color: { rgb: 'A0A0A0' } }
+              }
+            }
+          } else {
+            // Data rows
+            cell.s = {
+              alignment: { horizontal: 'center', vertical: 'center' },
+              border: {
+                top: { style: 'thin', color: { rgb: 'D0D0D0' } },
+                left: { style: 'thin', color: { rgb: 'D0D0D0' } },
+                right: { style: 'thin', color: { rgb: 'D0D0D0' } },
+                bottom: { style: 'thin', color: { rgb: 'D0D0D0' } }
+              }
+            }
+            // Ελληνικό format ημερομηνίας
+            if(cell.v && typeof cell.v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cell.v)) {
+              cell.z = 'DD/MM/YYYY'
+            }
+            // Αριθμοί με ελληνικό format
+            if(typeof cell.v === 'number') {
+              cell.z = '#,##0.00'
+            }
+          }
         }
       }
     }
