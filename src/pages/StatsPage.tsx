@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { loadAllEntries, DailyEntry, updateEntry } from '../services/storage'
+import { loadAllEntries, DailyEntry, updateEntry, getProgressForMonth } from '../services/storage'
 import { exportEcoFriendlyExcel } from '../utils/exportExcel'
 import PageHeader from '../components/PageHeader'
 import Modal from '../components/Modal'
@@ -34,6 +34,25 @@ export default function StatsPage(){
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [startDate, setStartDate] = useState<string>(new Date(Date.now() - 1000*60*60*24*30).toISOString().slice(0,10))
   const [endDate, setEndDate] = useState<string>(new Date().toISOString().slice(0,10))
+
+  const [progress, setProgress] = useState<{category:string,target:number,achieved:number}[]>([])
+  const [drillCategory, setDrillCategory] = useState<string|null>(null)
+
+  // Φόρτωση στόχων/επίτευξης για τον μήνα
+  useEffect(()=>{
+    if(mode !== 'by-month') return
+    getProgressForMonth(year, month).then(setProgress)
+  }, [mode, year, month])
+
+  // Εγγραφές του μήνα για την επιλεγμένη κατηγορία (drill-down)
+  const drillEntries: DailyEntry[] = useMemo(() => {
+    if (!drillCategory || mode !== 'by-month') return []
+    return entries.filter((e: DailyEntry) => {
+      if (!e.category || String(e.category).trim() !== drillCategory) return false
+      const d = new Date(e.date)
+      return d.getFullYear() === year && (d.getMonth() + 1) === month
+    })
+  }, [drillCategory, entries, year, month, mode])
 
   const [categoryQuery, setCategoryQuery] = useState('')
   const [categories, setCategories] = useState<string[]>([])
@@ -300,7 +319,62 @@ export default function StatsPage(){
         breadcrumb="Στατιστικά"
       />
       <div style={{maxWidth:1400, margin:'0 auto', width:'100%'}}>
-  <div className="panel-card mb-4">
+        {mode === 'by-month' && progress.length > 0 && (
+          <div className="panel-card mb-4">
+            <h3 className="font-semibold mb-2">Στόχοι ανά κατηγορία ({month}/{year})</h3>
+            <table className="stats-table">
+              <thead>
+                <tr className="muted text-xs" style={{textAlign:'left'}}>
+                  <th style={{padding:'8px 12px'}}>Κατηγορία</th>
+                  <th style={{padding:'8px 12px'}}>Στόχος</th>
+                  <th style={{padding:'8px 12px'}}>Επίτευξη</th>
+                </tr>
+              </thead>
+              <tbody>
+                {progress.map(row => (
+                  <tr key={row.category} style={{cursor:'pointer'}} onClick={()=> setDrillCategory(row.category)}>
+                    <td style={{padding:'8px 12px', textDecoration:'underline'}}>{row.category}</td>
+                    <td style={{padding:'8px 12px'}}>{row.target}</td>
+                    <td style={{padding:'8px 12px'}}>{row.achieved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {/* Drill-down modal για εγγραφές κατηγορίας */}
+            {drillCategory && (
+              <Modal isOpen={!!drillCategory} onClose={()=>setDrillCategory(null)}>
+                <div style={{maxWidth:600}}>
+                  <h3 className="font-semibold mb-2">Εγγραφές για "{drillCategory}" ({month}/{year})</h3>
+                  {drillEntries.length === 0 ? (
+                    <div className="muted">Δεν βρέθηκαν εγγραφές.</div>
+                  ) : (
+                    <table className="stats-table">
+                      <thead>
+                        <tr className="muted text-xs" style={{textAlign:'left'}}>
+                          <th style={{padding:'8px 12px'}}>Ημερομηνία</th>
+                          <th style={{padding:'8px 12px'}}>Πελάτης</th>
+                          <th style={{padding:'8px 12px'}}>Παραγγελία</th>
+                          <th style={{padding:'8px 12px'}}>Ποσότητα</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {drillEntries.map((e: DailyEntry) => (
+                          <tr key={e.id}>
+                            <td style={{padding:'8px 12px'}}>{e.date ? e.date.slice(0,10) : ''}</td>
+                            <td style={{padding:'8px 12px'}}>{e.customerName || ''}</td>
+                            <td style={{padding:'8px 12px'}}>{e.orderNumber || ''}</td>
+                            <td style={{padding:'8px 12px'}}>{e.points || 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </Modal>
+            )}
+          </div>
+        )}
+      <div className="panel-card mb-4">
         <div className="stats-controls" style={{display:'grid',gridTemplateColumns:'1fr',gap:14,alignItems:'start'}}>
           <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:12}}>
             <div>
@@ -393,7 +467,7 @@ export default function StatsPage(){
             </div>
           </div>
         </div>
-  </div>
+          </div>
 
       {/* Results section: chart + table */}
   <section className="panel-card results-panel" style={{width:'100%'}}>
