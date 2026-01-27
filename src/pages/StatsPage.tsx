@@ -268,21 +268,35 @@ export default function StatsPage(){
   const categoryPoints = categoryCounts.points
   const categoryCountsMap = categoryCounts.counts
 
-  const totalPointsAll = useMemo(() => {
-    return visible.reduce((s, e) => s + (e.points || 0), 0)
+  const isRantevou = (e: DailyEntry) => {
+    const cat = String(e.category || '').trim().toUpperCase()
+    return cat === 'ΡΑΝΤΕΒΟΥ'
+  }
+
+  const totalRantevouMoney = useMemo(() => {
+    return visible.reduce((s, e) => (isRantevou(e) ? s + (e.points || 0) : s), 0)
   }, [visible])
+
+  const visibleWithoutRantevou = useMemo(() => {
+    return visible.filter(e => !isRantevou(e))
+  }, [visible])
+
+  const totalPointsAll = useMemo(() => {
+    // Σημεία χωρίς τα ΡΑΝΤΕΒΟΥ
+    return visibleWithoutRantevou.reduce((s, e) => s + (e.points || 0), 0)
+  }, [visibleWithoutRantevou])
 
   const totalEntriesAll = visible.length
 
   const avgPerPeriod = useMemo(() => {
     const periods = new Set<string>()
-    for (const e of visible) {
+    for (const e of visibleWithoutRantevou) {
       const d = dateOnly(e.date)
       if (d) periods.add(d)
     }
     const n = periods.size
     return n > 0 ? Math.round(totalPointsAll / n) : 0
-  }, [visible, totalPointsAll])
+  }, [visibleWithoutRantevou, totalPointsAll])
 
   async function downloadExcel(){
     // Εξαγωγή μόνο με κατηγορία, όνομα πελάτη, παραγγελία, ποσότητα
@@ -471,7 +485,7 @@ export default function StatsPage(){
         {/* KPIs below results */}
         <div className="kpi-row" style={{display:'flex',gap:12,marginTop:12}}>
           <div className="kpi-card">
-            <div className="kpi-title">Σύνολο σημείων</div>
+            <div className="kpi-title">Σύνολο σημείων (χωρίς ραντεβού)</div>
             <AnimatedNumber value={totalPointsAll} />
           </div>
           <div className="kpi-card">
@@ -481,6 +495,10 @@ export default function StatsPage(){
           <div className="kpi-card">
             <div className="kpi-title">Μέσο ανά περίοδο</div>
             <AnimatedNumber value={avgPerPeriod} />
+          </div>
+          <div className="kpi-card">
+            <div className="kpi-title">Ραντεβού (€)</div>
+            <AnimatedNumber value={Math.round(totalRantevouMoney)} />
           </div>
         </div>
 
