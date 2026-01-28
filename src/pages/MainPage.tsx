@@ -6,6 +6,7 @@ import { loadEntriesForMonth } from '../services/storage'
 import { DailyEntry } from '../services/storage'
 import PageHeader from '../components/PageHeader'
 import { safeLocalStorageGet } from '../utils/safeLocalStorage'
+import { formatNumber } from '../utils/formatNumber'
 
 export default function MainPage(){
   // default to the shipped standout hero so the change is visible immediately
@@ -212,7 +213,7 @@ export default function MainPage(){
 
                     <div className="stat-content">
                       <div className="stat-label">{s.category}</div>
-                      <div className="stat-sub">{s.achieved} / {s.target} ({pctClamped}%)</div>
+                      <div className="stat-sub">{formatNumber(s.achieved || 0, 2)} / {formatNumber(s.target || 0, 2)} ({pctClamped}%)</div>
                       <div className="stat-bar" role="progressbar" aria-valuenow={pctClamped} aria-valuemin={0} aria-valuemax={100}>
                         <div className="fill" style={{ width: `${pctClamped}%` }} />
                       </div>
