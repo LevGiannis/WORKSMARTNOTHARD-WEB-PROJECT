@@ -1,16 +1,13 @@
-# Audit Report — WorkSmartNotHard (Web + Desktop)
+# Audit Report — WorkSmartNotHard (Web + Portable)
 
-Date: 2025-12-21
-Branch: `desktop-offline-windows-zip`
-Commit (HEAD): `381c37f`
+Date: 2026-01-28
+Branch: `main`
 
 ## Executive Summary
 
-- Το project είναι λειτουργικό ως **Web SPA (Vite/React)** και ως **Desktop app (Electron)** με offline αποθήκευση σε αρχείο JSON.
-- Τα builds που ελέγχθηκαν τοπικά: `npm run build`, `npm run build:electron-main`, `npm run electron:dist` — επιτυχή.
-- Οι κύριες “τριβές” σε διανομή:
-  - macOS: Gatekeeper εμφανίζει “damaged/can’t be opened” για unsigned/not notarized builds.
-  - Windows: γενικά OK, αλλά αν ο χρήστης τρέξει `.exe` χωρίς σωστή αποσυμπίεση/φάκελο, μπορεί να προκύψουν missing DLL issues.
+- Το project είναι λειτουργικό ως **Web SPA (Vite/React)** και ως **Portable offline** build (double‑click `portable/index.html`).
+- Τα builds που ισχύουν στο repo: `npm run build` (web) και `npm run build:portable` (portable).
+- Κύρια “τριβή” σε portable διανομή: σε ορισμένα περιβάλλοντα, το browser storage σε `file://` μπορεί να καθαρίζεται/μπλοκάρεται.
 
 ## Project Overview
 
@@ -18,108 +15,63 @@ Commit (HEAD): `381c37f`
 - UI: React 18 + TypeScript
 - Bundler: Vite 5
 - Styling: Tailwind 3 + PostCSS + Autoprefixer
-- Routing: `react-router-dom` (BrowserRouter για web, HashRouter για Electron)
-- Desktop: Electron (main/preload TS build σε `dist-electron/`)
-- Packaging: `electron-builder` (mac zip, win zip, linux AppImage)
+- Routing: `react-router-dom` (BrowserRouter για web, HashRouter για `file://`)
 
 ### Repo Structure (high level)
 - `src/`: React app
-- `electron/`: Electron main + preload + typings
-- `dist/`: build output (web + electron-builder artifacts)
-- `.github/workflows/`: CI for GitHub Pages + Desktop builds
+- `dist/`: build output (web)
+- `portable/`: build output (portable)
+- `.github/workflows/`: CI for GitHub Pages + Portable builds
 
 ## Build & CI Validation
 
 ### Local builds
 - `npm run build` ✅ (web)
-- `npm run build:electron-main` ✅
-- `npm run electron:dist` ✅ (mac zip, unsigned)
+- `npm run build:portable` ✅ (portable)
 
 Notes:
-- Το terminal ανέφερε “vite: command not found” όταν έλειπαν dependencies. Με `npm ci` αποκαταστάθηκε.
-- `electron-builder` warnings που παραμένουν: default app icon και απουσία code signing (αναμενόμενο χωρίς Apple Developer ID).
+- Το terminal μπορεί να αναφέρει “vite: command not found” όταν λείπουν dependencies. Με `npm ci` αποκαθίσταται.
 
 ### Dependency security (npm audit)
-
-`npm audit --audit-level=moderate` ανέφερε 3 moderate ευπάθειες:
-
-- `electron < 35.7.5`: ASAR Integrity Bypass (fix απαιτεί major upgrade)
-- `esbuild <= 0.24.2`: dev server request/response exposure (fix απαιτεί major upgrade του Vite)
 
 Πρακτική πρόταση:
 
 - Μην τρέξεις άκριτα `npm audit fix --force` στο ίδιο branch.
-- Αν θες να το κλείσουμε, κάν’ το σε ξεχωριστό branch με ελεγχόμενη αναβάθμιση (Electron + Vite), μετά `npm run build` και `npm run electron:dist`.
+- Κάν’ το σε ξεχωριστό branch και επιβεβαίωσε `npm run build` και `npm run build:portable`.
 
 ### GitHub Actions workflows
 - `/.github/workflows/deploy-pages.yml`
   - Trigger: `push` στο `main` + `workflow_dispatch`
   - Deploy: GitHub Pages
-- `/.github/workflows/build-desktop.yml`
-  - Trigger: `workflow_dispatch` + `release.published`
-  - Jobs: macOS + Windows
-  - Artifacts: `dist/*.zip`
+- `/.github/workflows/build-portable.yml`
+  - Trigger: `push` στο `main` + `workflow_dispatch`
+  - Artifact: `WorkSmartNotHard-portable.zip`
 
 Operational note:
 - Για να εμφανίζεται/τρέχει πάντα εύκολα από Actions UI, το workflow πρέπει πρακτικά να υπάρχει στο default branch.
 
-## Desktop Offline Storage
+## Storage (Web + Portable)
 
-- Electron storage υλοποιείται στο `electron/main.ts` ως KV-store σε JSON αρχείο:
-  - Path: `app.getPath('userData')/worksmart-device-storage.json`
-  - IPC: `ws-storage:getItem/setItem/removeItem/clear`
-- Renderer storage abstraction στο `src/services/storage.ts`:
-  - Αν υπάρχει `window.wsDeviceStorage`: χρήση IPC backend (async)
-  - Αλλιώς: χρήση `localStorage`
+- Storage abstraction στο `src/services/storage.ts`:
+  - Primary: `localStorage`
+  - Fallback: in‑memory store όταν το `localStorage` δεν είναι διαθέσιμο/επιτρέπεται
+  - Optional hook: αν υπάρχει `window.wsDeviceStorage`, χρησιμοποιείται ως async backend (κρατήθηκε για πιθανή future desktop ενσωμάτωση)
 
 Observations:
-- Η αποθήκευση entries/goals/tasks/pendings είναι fully async.
-- `getProgressSummary()` είναι sync και δουλεύει μόνο για web/localStorage (documented στο code). Στο Electron οι callers πρέπει να χρησιμοποιούν async loaders.
+- Η αποθήκευση entries/goals/tasks/pendings είναι async.
+- `getProgressSummary()` είναι sync helper και δουλεύει μόνο με `localStorage`.
 
 ## Routing & Offline
 
 - Web: `BrowserRouter` με `basename` από `import.meta.env.BASE_URL`.
-- Electron: `HashRouter` για να μην εξαρτάται από path routing σε `file://`.
+- Portable (`file://`): `HashRouter` για να μην εξαρτάται από path routing.
 - Service worker:
-  - `src/utils/notifications.ts` αποφεύγει SW registration σε Electron/file://.
-
-## Security Review (pragmatic)
-
-- Electron window:
-  - `contextIsolation: true` ✅
-  - `nodeIntegration: false` ✅
-  - `preload` via `contextBridge` ✅
-- IPC surface:
-  - Limited σε storage operations (OK)
-  - Δεν εκθέτει arbitrary filesystem APIs στον renderer (good)
-
-Recommendation (optional hardening):
-- Consider `sandbox: true` και explicit `contentSecurityPolicy` (CSP) αν το app επεκταθεί ή φορτώνει remote content.
-
-## Packaging & Distribution
-
-### macOS
-- Παράγεται zip (`dist/WorkSmartNotHard-<version>-arm64-mac.zip`).
-- Χωρίς Developer ID signing + notarization, οι χρήστες θα βλέπουν συχνά Gatekeeper prompts.
-
-Workarounds (user-side):
-- Right-click → Open
-- Privacy & Security → Open Anyway
-- `xattr -dr com.apple.quarantine <path-to-app>`
-
-### Windows
-- Παράγεται zip.
-- Common pitfall: running the `.exe` from μέσα από το zip ή μετακίνηση μόνο του `.exe` χωρίς τα υπόλοιπα αρχεία.
+  - `src/utils/notifications.ts` αποφεύγει SW registration σε `file://`.
 
 ## Findings & Recommendations
 
-### High
-- **macOS Gatekeeper**: χωρίς notarization θα εμφανίζονται μπλοκαρίσματα (“damaged”).
-  - Recommendation: αν θες “επαγγελματική” διανομή, πρόσθεσε signing + notarization.
-
 ### Medium
-- **Icon**: χρησιμοποιείται default Electron icon (δεν υπάρχει set app icon για mac/win).
-- **Docs**: README χρειάζεται σαφείς οδηγίες για download artifacts, mac Gatekeeper, Windows extraction.
+- **Docs**: README χρειάζεται σαφείς οδηγίες για backup/import και portable περιορισμούς (`file://`).
 
 ### Low
 - **Typed deps**: υπάρχει `@types/react-router-dom` ενώ χρησιμοποιείται `react-router-dom@6` (στο v6 συνήθως δεν χρειάζεται). Αν δεν προκαλεί πρόβλημα, μπορεί να μείνει, αλλά είναι υποψήφιο για cleanup.
@@ -127,23 +79,16 @@ Workarounds (user-side):
 
 ## Suggested Next Steps (pick & choose)
 
-1) Docs-first (άμεσο): αναβάθμιση README με:
-- Download artifacts (Actions/Release)
-- Troubleshooting macOS Gatekeeper
-- Windows extraction/missing DLL notes
-- Πού αποθηκεύονται τα δεδομένα (web vs desktop)
+1) Docs-first (άμεσο):
+- Backup/export/import (format, demo file)
+- Portable troubleshooting (`file://`, storage persistence)
 
-2) Distribution quality:
-- Προσθήκη `dmg` στο mac target (πιο user-friendly από zip)
-- App icons (`.icns`, `.ico`)
-
-3) “Production-grade” mac distribution:
-- Developer ID signing + notarization στο CI (requires Apple Developer account)
+2) Stability:
+- Προσθήκη/βελτίωση UX για persistent storage αίτημα (όπου υποστηρίζεται)
 
 ## Appendix
 
 ### Commands
 - Web dev: `npm run dev`
 - Web build: `npm run build`
-- Electron dev: `npm run electron:dev`
-- Electron dist: `npm run electron:dist`
+- Portable build: `npm run build:portable`

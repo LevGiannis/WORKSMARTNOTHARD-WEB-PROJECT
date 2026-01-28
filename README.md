@@ -3,20 +3,20 @@
 React/Vite SPA που τρέχει:
 
 - ως **Web app** (π.χ. GitHub Pages) με αποθήκευση στο `localStorage`
-- ως **Portable offline** build που ανοίγει με **διπλό κλικ** στο `index.html` (χωρίς server)
+- ως **Portable offline** build που ανοίγει με **διπλό κλικ** στο `portable/index.html` (χωρίς server)
 
-## Γρήγορη Εικόνα
+## Γρήγορη εικόνα
 
-- Web mode: δεδομένα ανά browser/profile (χωρίς κοινό sync)
-- Portable mode: ίδιο app μέσω `file://` (ορισμένα περιβάλλοντα μπορεί να “σβήνουν” τα browser δεδομένα)
-- Routing: Web `BrowserRouter` / Portable `HashRouter`
+- **Web mode**: δεδομένα ανά browser/profile (χωρίς sync)
+- **Portable mode**: ίδιο app σε `file://` (σε μερικά εταιρικά/locked‑down περιβάλλοντα το storage μπορεί να καθαρίζεται)
+- **Routing**: Web `BrowserRouter` / Portable `HashRouter` (auto‑detect)
 
-## Προαπαιτούμενα (για development)
+## Προαπαιτούμενα (development)
 
 - Node.js 18+ (προτείνεται 20)
 - npm 9+
 
-## Local Development (Web)
+## Τοπικό development (Web)
 
 ```bash
 npm ci
@@ -30,55 +30,83 @@ npm run build
 npm run preview
 ```
 
-## Portable Offline (διπλό κλικ σε `index.html`)
+## Portable Offline (διπλό κλικ)
 
-Φτιάχνει ένα self‑contained folder που ανοίγει με **διπλό κλικ** (χωρίς server/Electron):
+Φτιάχνει self‑contained folder για άνοιγμα με διπλό κλικ (χωρίς server):
 
 ```bash
 npm ci
 npm run build:portable
 ```
 
-Μετά άνοιξε με διπλό κλικ το `portable/index.html`.
+Μετά άνοιξε:
 
-### Portable troubleshooting (αν ανοίγει “κενό”)
+- `portable/index.html`
 
-Στο `file://` δεν υπάρχει log αρχείο στον δίσκο (ο browser δεν μπορεί να γράψει αρχεία).
+### Portable troubleshooting
 
-- Αν δεις κενή σελίδα, θα εμφανιστεί ένα **Portable Debug** panel.
-- Πάτα **Download log** και στείλε το `worksmart-portable-log.txt`.
+- Αν δεις κενή σελίδα, θα εμφανιστεί **Portable Debug** panel.
+- Πάτα **Download log** και δες/στείλε το `worksmart-portable-log.txt`.
 
-Σημείωση: Αν θες DevTools, συνήθως είναι `Ctrl+Shift+I` (Windows) ή `Cmd+Option+I` (Mac). Σε laptops το `F12` μπορεί να είναι πλήκτρο ήχου (χρειάζεται `Fn+F12`).
+DevTools shortcuts:
 
-### Portable “χωρίς terminal” download (zip)
+- Windows: `Ctrl+Shift+I` (ή `Fn+F12` σε laptops)
+- macOS: `Cmd+Option+I`
 
-GitHub → **Actions** → **Build Portable (Double-Click Index)** → κατέβασε artifact `WorkSmartNotHard-portable`.
+### Portable download (zip) από GitHub
 
-## Πού αποθηκεύονται τα δεδομένα;
+GitHub → **Actions** → **Build Portable (Double-Click Index)** → artifact `WorkSmartNotHard-portable`.
 
-- **Web / Portable**: `localStorage` (δες `src/services/storage.ts`)
+## Δεδομένα & Backup
 
-Δεν υπάρχει κοινός συγχρονισμός μεταξύ συσκευών.
+### Πού αποθηκεύονται τα δεδομένα;
+
+- Web/Portable: `localStorage` (δες `src/services/storage.ts`)
+
+Σε `file://` ή σε locked‑down browsers, το app μπορεί να δουλέψει **χωρίς μόνιμη αποθήκευση** (fallback σε in‑memory storage). Για πιο σταθερή συμπεριφορά:
+
+- Πήγαινε **Προφίλ** → ζήτησε **Μόνιμη αποθήκευση** (όπου υποστηρίζεται)
+
+### Export / Import
+
+Από τη σελίδα **Προφίλ**:
+
+- **Export**: κατεβάζει αρχείο `worksmart-backup-YYYY-MM-DDTHH-MM-SS.json`
+- **Import**: εισάγει backup και κάνει refresh
+
+Το backup είναι σε format:
+
+- `format: "worksmart-backup"`
+- `version: 1`
+- `data`: raw JSON strings για τα app keys (entries/goals/tasks/pendings + profile/suggestions)
+
+### Demo δεδομένα
+
+Το [demo.json](demo.json) είναι έτοιμο **importable backup** που γεμίζει demo entries (χωρίς να πειράζει profile/suggestions).
+
+## GitHub Pages
+
+Το deploy γίνεται με workflow:
+
+- `/.github/workflows/deploy-pages.yml` (τρέχει σε push στο `main`)
+
+Σημείωση: το base path για Pages είναι hardcoded στο `vite.config.ts` (`PAGES_BASE`). Αν αλλάξεις όνομα repo, ενημέρωσε αυτό το path.
+
+## Workflows
+
+- `/.github/workflows/deploy-pages.yml`: deploy στο GitHub Pages (`main`)
+- `/.github/workflows/build-portable.yml`: build portable artifact (`main` + manual)
 
 ## Troubleshooting
 
 ### Dev: “vite: command not found”
 
-Σημαίνει ότι δεν υπάρχουν εγκατεστημένα dependencies.
+Λείπουν dependencies:
 
 ```bash
 npm ci
 ```
 
-## Workflows
+## Audit
 
-- `/.github/workflows/deploy-pages.yml`: deploy στο GitHub Pages (branch `main`)
-- `/.github/workflows/build-portable.yml`: build portable artifact (double‑click)
-
-## Τεκμηρίωση ελέγχου (Audit)
-
-Δες `AUDIT_REPORT.md` για πλήρη αναφορά (builds, αρχιτεκτονική, γνωστά θέματα διανομής, προτάσεις).
-
-## Dependency audit (σημείωση)
-
-`npm audit --audit-level=moderate` αναφέρει αυτή τη στιγμή moderate θέματα που κλείνουν με major upgrades (Electron/Vite). Αν θες να τα λύσουμε, κάν’ το σε ξεχωριστό branch και επιβεβαίωσε builds (`npm run build`, `npm run electron:dist`).
+Δες [AUDIT_REPORT.md](AUDIT_REPORT.md) για συνοπτικό έλεγχο (τι υποστηρίζεται, builds, γνωστά θέματα, προτάσεις).
